@@ -350,10 +350,14 @@ if ((decision == 1) or (decision == 2)):
 #plot equity curve charts (absolute points & return)
 
 plt.figure(2)
-histo['Strategy AR'].plot(grid=True,figsize=(8,5), legend=True) #, label='Strategy')
-histo['Benchmark AR'].plot(grid=True,figsize=(8,5), legend=True) #, label='Benchmark')
+histo['Strategy TR %']=(histo['Strategy TR']-1)*100
+histo['Benchmark TR %']=(histo['Benchmark TR']-1)*100
+
+histo['Strategy TR %'].plot(grid=True,figsize=(8,5), legend=True) #, label='Strategy')
+histo['Benchmark TR %'].plot(grid=True,figsize=(8,5), legend=True) #, label='Benchmark')
+
 title('MA Crossover Return Analysis', fontdict=font1)
-ylabel('Total Return', fontdict=font2)
+ylabel('Total Return (%)', fontdict=font2)
 xlabel('Date', fontdict=font2)
 
 #plt.figure(3)
