@@ -5,7 +5,6 @@
        \              by Edorenta              /
         '====================================='
 '''
-#refers directly to the 2MA optimizer, meant to execute the best strategy and get the performance graph
 #libs to include
 import pandas as pd
 import numpy as np
@@ -23,9 +22,9 @@ import datetime
 #input variables
 import_dir = "data_frame\\historical_data\\"
 export_dir = "data_frame\\technical_analysis\\"
-file_name = "DAXEUR_M5.csv" #instrument historical dt ohlc vol to load
-ma1_p = 33
-ma2_p = 228
+file_name = "EURUSD_M5.csv" #instrument historical dt ohlc vol to load
+ma1_p = 15
+ma2_p = 90
 digits = 5
 spread_pts = 20
 timeframe = 5 #in minutes to annualize
@@ -78,9 +77,13 @@ histo['direction'] = np.where(histo['ma1_p-ma2_p'] >= divergence, 1, 0)
 histo['direction'] = np.where(histo['ma1_p-ma2_p'] < divergence, -1, histo['direction'])
 histo['direction'].value_counts()
 
+#print(histo['ma1_p'], histo['ma2_p'])
+
 #create columns containing daily mkt & str candle log returns
 histo['Market Returns'] = np.log(histo['close'] / histo['close'].shift(1))
 histo['Strategy Returns'] = histo['Market Returns'] * histo['direction'].shift(1)
+
+#print(histo['direction'], histo['Market Returns'], histo['Strategy Returns'])
 
 #create columns containing daily mkt & str candle absolute pts return
 histo['Market Shift'] = histo['close'] - histo['close'].shift(1)
@@ -97,6 +100,7 @@ histo['Benchmark TR'] = histo['Market Returns'].cumsum() + 1
 histo['Strategy AR'] = histo['Strategy Shift'].cumsum() + 1
 histo['Benchmark AR'] = histo['Market Shift'].cumsum() + 1
 
+#print(histo['Strategy TR'])
 histo['Sharpe'] = annualised_sharpe(histo['Strategy TR'])
 sharpe = histo['Sharpe']
 
