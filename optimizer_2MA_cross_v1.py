@@ -28,12 +28,12 @@ import datetime
 #import risklib as rsk
 
 #input variables
-ma1_start = 15      #first parameter for the fast MA
+ma1_start = 12      #first parameter for the fast MA
 ma1_stop = 40       #last parameter for the fast MA
 ma2_start = 20      #first parameter for the slow MA
 ma2_stop = 120      #first parameter for the slow MA
-step_1 = 5          #slover increment for fast MA
-step_2 = 5          #slover increment for slow MA
+step_1 = 1          #slover increment for fast MA
+step_2 = 2          #slover increment for slow MA
 
 import_dir = "data_frame\\historical_data\\"        #root of the historical data .csv
 export_dir = "data_frame\\technical_analysis\\"     #root of the export folder (useless atm)
@@ -225,7 +225,7 @@ k=1 #pass counter
 for i, fast_ma in enumerate(ma1):
     for j, slow_ma in enumerate(ma2):
         pnl, sharpe = strat_logic(fast_ma,slow_ma)
-        pnl = (1-pnl)*100
+        pnl = (pnl-1)*100
         results_pnl[i,j] = pnl
         results_sharpe[i,j] = sharpe
         pass_[i,j]=k
