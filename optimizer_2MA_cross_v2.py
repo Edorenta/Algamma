@@ -28,16 +28,16 @@ import datetime
 #import risklib as rsk
 
 #input variables
-ma1_start = 12      #first parameter for the fast MA
-ma1_stop = 40       #last parameter for the fast MA
-ma2_start = 20      #first parameter for the slow MA
-ma2_stop = 120      #first parameter for the slow MA
-step_1 = 10         #slover increment for fast MA
-step_2 = 15         #slover increment for slow MA
+ma1_start = 2       #first parameter for the fast MA
+ma1_stop = 10       #last parameter for the fast MA
+ma2_start = 2       #first parameter for the slow MA
+ma2_stop = 10       #first parameter for the slow MA
+step_1 = 1          #slover increment for fast MA
+step_2 = 1          #slover increment for slow MA
 
 import_dir = "data_frame\\historical_data\\"        #root of the historical data .csv
 export_dir = "data_frame\\technical_analysis\\"     #root of the export folder (useless atm)
-file_name = "EURUSD_M5.csv"                         #instrument historical data, format has to be utc|open|high|low|close or close
+file_name = "BTCUSD_M5.csv"                         #instrument historical data, format has to be utc|open|high|low|close or close
 digits = 5                                          #digits of the underlying instrument quote
 spread_pts = 20                                     #broker typical spread in base points (pip/10) not implemented yet
 transaction_cost = 1.5                              #broker transaction cost not implemented yet
@@ -86,7 +86,7 @@ def annualised_sharpe(returns, tradable_days):
 
 #Drawdown
 def dd(returns, ti): #local max drawdown
-    #Returns the draw-down given time pRpiod ti
+    #Returns the draw-down given time period ti
     values = prices(returns, 100)
     pos = len(values) - 1
     pre = pos - ti
@@ -256,12 +256,12 @@ df_res.index.names = ['Pass#']
 max_sharpe_loc = df_res['sharpe'].argmax()
 max_sharpe = df_res['sharpe'][max_sharpe_loc]
 max_sharpe_MA1 = df_res['fast ma'][max_sharpe_loc]
-max_sharpe_MA2 = df_res['fast ma'][max_sharpe_loc]
+max_sharpe_MA2 = df_res['slow ma'][max_sharpe_loc]
 
 max_tr_loc = df_res['return'].argmax()
 max_tr = df_res['return'][max_tr_loc]
 max_tr_MA1 = df_res['fast ma'][max_tr_loc]
-max_tr_MA2 = df_res['fast ma'][max_tr_loc]
+max_tr_MA2 = df_res['slow ma'][max_tr_loc]
 
 print(df_res)
 
@@ -269,6 +269,10 @@ print(df_res)
       |     PLOT RESULTS      |
       '-----------------------'
 '''
+
+str_result = "Best settings for Sharpe : MA1(%s)/MA2(%s) \nBest settings for Total Return : MA1(%s)/MA2(%s)" %(max_sharpe_MA1,max_sharpe_MA2,max_tr_MA1,max_tr_MA2)
+print(df_res, str_result)
+
 #plot parameters
 scatter_size = 20+15000*(1/k)
 font1= {'family': 'serif',
@@ -292,10 +296,14 @@ plt.figure(1)
 figure(1).suptitle("Risk Reward Multiple Criteria Optimization", fontdict=font1, fontsize=16)
 
 #2 dim sharpe graph
-subplot(221)
+pl1 = plt.subplot(221)
 y1 = results_sharpe
 x1 = pass_
+
 scatter(x1,y1,alpha=.4,s=scatter_size)
+pl1.set_xlim(xmin=0)
+pl1.set_xlim(xmax=trunc(k+k/20))
+
 title('Sharpe Ratio Perspective', fontdict=font3)
 ylabel('Sharpe Ratio', fontdict=font2)
 xlabel('Pass #', fontdict=font2)
@@ -303,10 +311,12 @@ margins(0.2) #tweak spacing to prevent clipping of tick-labels
 plt.subplots_adjust(bottom=0.15)
 
 #2 dim returns graph
-subplot(222)
+pl2 = plt.subplot(222)
 y2 = results_pnl
 x2 = pass_
 scatter(x2,y2,alpha=.4,s=scatter_size)
+pl2.set_xlim(xmin=0)
+pl2.set_xlim(xmax=trunc(k+k/20))
 title('Total Return Perspective', fontdict=font3)
 ylabel('Return (%)', fontdict=font2)
 xlabel('Pass #', fontdict=font2)
@@ -314,7 +324,7 @@ margins(0.2)
 plt.subplots_adjust(bottom=0.15)
 
 #3 dim sharpe graph
-subplot(223)
+pl3 = plt.subplot(223)
 x3 = ma1
 y3 = ma2
 z3 = results_sharpe
@@ -327,7 +337,7 @@ margins(0.2)
 plt.subplots_adjust(bottom=0.15)
 
 #3 dim returns graph
-subplot(224)
+pl4 = plt.subplot(224)
 x4 = ma1
 y4 = ma2
 z4 = results_pnl
@@ -339,12 +349,15 @@ ylabel('Slow MA Period', fontdict=font2)
 margins(0.2)
 plt.subplots_adjust(bottom=0.15)
 
-decision = input('Please press:\n   1] Sharpe Ratio Optimization\n   2] Total Return Optimization\n   3] Exit\n\n')
+decision = int(input('Please press:\n   1] Sharpe Ratio Optimization\n   2] Total Return Optimization\n   3] Exit\n\n'))
 
 if ((decision == 1) or (decision == 2)):
+    gr_title = 'Crossover Return Analysis'
     if decision == 1:
+        gr_title = "MA(%s)/MA(%s) %s" %(max_sharpe_MA1,max_sharpe_MA2, gr_title)
         strat_logic(max_sharpe_MA1,max_sharpe_MA2)
     if decision == 2:
+        gr_title = "MA(%s)/MA(%s) %s" %(max_tr_MA1,max_tr_MA2, gr_title)
         strat_logic(max_tr_MA1,max_tr_MA2)
 
 #plot equity curve charts (absolute points & return)
@@ -356,16 +369,24 @@ histo['Benchmark TR %']=(histo['Benchmark TR']-1)*100
 histo['Strategy TR %'].plot(grid=True,figsize=(8,5), legend=True) #, label='Strategy')
 histo['Benchmark TR %'].plot(grid=True,figsize=(8,5), legend=True) #, label='Benchmark')
 
-title('MA Crossover Return Analysis', fontdict=font1)
+title(gr_title, fontdict=font1)
 ylabel('Total Return (%)', fontdict=font2)
 xlabel('Date', fontdict=font2)
 
 #plt.figure(3)
 #histo['direction'].plot(grid=True,figsize=(8,5))
 
-print(histo)
-
 plt.show()
+
+export_path = export_dir + 'BT_results_' + file_name
+
+decision = int(input("Would you like to export the result file as %s?\n   1] YES\n   2] NO\n" %(export_path)))
+
+if (decision == 1):
+    #extract the csv
+    header = ['open', 'high','low','close', 'ma1', 'ma2', 'direction', 'Strategy TR %', 'Benchmark TR %]']
+
+    histo.to_csv(export_path, columns = header, sep=',', encoding='utf-8', index=False)
 
 '''   .-----------------------.
       |   END OF OPTIMIZER    |
