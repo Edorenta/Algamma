@@ -203,12 +203,14 @@ def strat_logic(ma1_p, ma2_p):
       |  NUMPY OPTIMIZATION   | => optimization made possible through the linspace usage, heuristic solver
       '-----------------------'
 '''
-#run the previously genericly coded function on np linspaces
+
+#deduct the max passes from the user's input in order to dimension the result matrix
 nb_pass_1 = np.floor((ma1_stop - ma1_start)/step_1)
 nb_pass_2 = np.floor((ma2_stop - ma2_start)/step_2)
 nb_pass_1 = max(nb_pass_1, nb_pass_2)
 nb_pass_2 = nb_pass_1
 
+#define NumPy's linspaces as being vectors of every single pass of the optimization
 ma1 = np.linspace(ma1_start,ma1_stop,nb_pass_1,dtype=int)
 ma2 = np.linspace(ma2_start,ma2_stop,nb_pass_2,dtype=int)
 
@@ -226,14 +228,17 @@ res_ma2 = np.zeros(1+nb_pass_1**2)
       '------------------------'
 '''
 k=1 #pass counter
-#logic looper through numpy's linspace
+#run the previously genericly coded function through numpy's linspace
 for i, fast_ma in enumerate(ma1):
     for j, slow_ma in enumerate(ma2):
+        #call the strategy which will ouput both the result as P&L and computed Sharpe ratio
         pnl, sharpe = strat_logic(fast_ma,slow_ma)
+        #set returns as %
         pnl = (pnl-1)*100
         results_pnl[i,j] = pnl
         results_sharpe[i,j] = sharpe
         pass_[i,j] = k
+        #print the current stage of optimization
         print("Pass %s: [%s|%s] Results: [P&L: %s | Sharpe: %s]" %(k, fast_ma, slow_ma, pnl, sharpe))
 
         #store pass data into nympy vectors:
@@ -245,19 +250,21 @@ for i, fast_ma in enumerate(ma1):
         #next pass:
         k=k+1
 
+#store all the passes test results in a new dataframe
 res_series = [res_pnl, res_sharpe, res_ma1, res_ma2]
 df_res = pd.DataFrame(data=res_series)   # 1st row as the column names
-
-#df_res = pd.concat(res_series, axis=1, ignore_index=True)
+#transpose to get proper format
 df_res = df_res.T
 df_res.columns=['return','sharpe','fast ma','slow ma']
 df_res.index.names = ['Pass#']
 
+#find the maximum results using pandas' argmax function
+#highest Sharpe (risk-adjusted return approach):
 max_sharpe_loc = df_res['sharpe'].argmax()
 max_sharpe = df_res['sharpe'][max_sharpe_loc]
 max_sharpe_MA1 = df_res['fast ma'][max_sharpe_loc]
 max_sharpe_MA2 = df_res['slow ma'][max_sharpe_loc]
-
+#highest ending equity (total return approach):
 max_tr_loc = df_res['return'].argmax()
 max_tr = df_res['return'][max_tr_loc]
 max_tr_MA1 = df_res['fast ma'][max_tr_loc]
@@ -273,8 +280,11 @@ print(df_res)
 str_result = "Best settings for Sharpe : MA1(%s)/MA2(%s) \nBest settings for Total Return : MA1(%s)/MA2(%s)" %(max_sharpe_MA1,max_sharpe_MA2,max_tr_MA1,max_tr_MA2)
 print(df_res, str_result)
 
-#plot parameters
+#visual parameters
+#init dynamic scatter point sizing
 scatter_size = 20+15000*(1/k)
+
+#title and axes format
 font1= {'family': 'serif',
     'color':  'black',
     'weight': 'normal',
@@ -293,38 +303,26 @@ font3= {'family': 'serif',
 
 #create figure frame
 plt.figure(1)
+#give it a name
 figure(1).suptitle("Risk Reward Multiple Criteria Optimization", fontdict=font1, fontsize=16)
 
-#2 dim sharpe graph
-pl1 = plt.subplot(221)
+#first dimension: Sharpe graphs
+pl1 = plt.subplot(221) #2D subplot: pass vs Sharpe
+#set axis
 y1 = results_sharpe
 x1 = pass_
-
+#set dynamic scatter
 scatter(x1,y1,alpha=.4,s=scatter_size)
 pl1.set_xlim(xmin=0)
 pl1.set_xlim(xmax=trunc(k+k/20))
-
+#labels
 title('Sharpe Ratio Perspective', fontdict=font3)
 ylabel('Sharpe Ratio', fontdict=font2)
 xlabel('Pass #', fontdict=font2)
 margins(0.2) #tweak spacing to prevent clipping of tick-labels
 plt.subplots_adjust(bottom=0.15)
 
-#2 dim returns graph
-pl2 = plt.subplot(222)
-y2 = results_pnl
-x2 = pass_
-scatter(x2,y2,alpha=.4,s=scatter_size)
-pl2.set_xlim(xmin=0)
-pl2.set_xlim(xmax=trunc(k+k/20))
-title('Total Return Perspective', fontdict=font3)
-ylabel('Return (%)', fontdict=font2)
-xlabel('Pass #', fontdict=font2)
-margins(0.2)
-plt.subplots_adjust(bottom=0.15)
-
-#3 dim sharpe graph
-pl3 = plt.subplot(223)
+pl3 = plt.subplot(223) #3D subplot: MA1 vs MA2 vs Sharpe heatmap
 x3 = ma1
 y3 = ma2
 z3 = results_sharpe
@@ -336,8 +334,24 @@ ylabel('Slow MA Period', fontdict=font2)
 margins(0.2)
 plt.subplots_adjust(bottom=0.15)
 
+#second dimension: Total Return graphs
+pl2 = plt.subplot(222) #2D subplot: pass vs Return
+#set axis
+y2 = results_pnl
+x2 = pass_
+#set dynamic scatter
+scatter(x2,y2,alpha=.4,s=scatter_size)
+pl2.set_xlim(xmin=0)
+pl2.set_xlim(xmax=trunc(k+k/20))
+#labels
+title('Total Return Perspective', fontdict=font3)
+ylabel('Return (%)', fontdict=font2)
+xlabel('Pass #', fontdict=font2)
+margins(0.2) #tweak spacing to prevent clipping of tick-labels
+plt.subplots_adjust(bottom=0.15)
+
 #3 dim returns graph
-pl4 = plt.subplot(224)
+pl4 = plt.subplot(224) #3D subplot: MA1 vs MA2 vs Return heatmap
 x4 = ma1
 y4 = ma2
 z4 = results_pnl
@@ -349,34 +363,37 @@ ylabel('Slow MA Period', fontdict=font2)
 margins(0.2)
 plt.subplots_adjust(bottom=0.15)
 
+#ask the user whether he'd like to access the return or Sharpe optimization details
 decision = int(input('Please press:\n   1] Sharpe Ratio Optimization\n   2] Total Return Optimization\n   3] Exit\n\n'))
-
+#answer management
 if ((decision == 1) or (decision == 2)):
     gr_title = 'Crossover Return Analysis'
-    if decision == 1:
+    if decision == 1: #Sharpe optimization popup
         gr_title = "MA(%s)/MA(%s) %s" %(max_sharpe_MA1,max_sharpe_MA2, gr_title)
         strat_logic(max_sharpe_MA1,max_sharpe_MA2)
-    if decision == 2:
+    if decision == 2: #Return optimization popup
         gr_title = "MA(%s)/MA(%s) %s" %(max_tr_MA1,max_tr_MA2, gr_title)
         strat_logic(max_tr_MA1,max_tr_MA2)
 
 #plot equity curve charts (absolute points & return)
-
 plt.figure(2)
+#get results in %
 histo['Strategy TR %']=(histo['Strategy TR']-1)*100
 histo['Benchmark TR %']=(histo['Benchmark TR']-1)*100
-
+#set results to fitting grid
 histo['Strategy TR %'].plot(grid=True,figsize=(8,5), legend=True) #, label='Strategy')
 histo['Benchmark TR %'].plot(grid=True,figsize=(8,5), legend=True) #, label='Benchmark')
-
+#display settings
 title(gr_title, fontdict=font1)
 ylabel('Total Return (%)', fontdict=font2)
 xlabel('Date', fontdict=font2)
+#show all the configured graphs
+plt.show()
 
 #plt.figure(3)
 #histo['direction'].plot(grid=True,figsize=(8,5))
 
-plt.show()
+
 
 export_path = export_dir + 'BT_results_' + file_name
 
