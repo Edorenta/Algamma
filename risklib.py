@@ -8,7 +8,7 @@
 '''
 
 import numpy as np
-from numpy.random as rand
+import numpy.random as rand
 
 '''
       .------------------------.
