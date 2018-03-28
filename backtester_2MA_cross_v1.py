@@ -13,8 +13,8 @@ import talib as ta
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.cbook as cbook
-from pylab import *
-from math import sqrt
+import pylab
+import math.sqrt
 import datetime
 
 #import risklib as rsk
