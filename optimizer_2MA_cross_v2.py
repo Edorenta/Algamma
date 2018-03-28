@@ -20,9 +20,9 @@ import pandas as pd
 import numpy as np
 import numpy.random as nrand
 import talib as ta
-from math import sqrt
+import math.sqrt
 import matplotlib.pyplot as plt
-from pylab import *
+import pylab
 import datetime
 
 #import risklib as rsk
